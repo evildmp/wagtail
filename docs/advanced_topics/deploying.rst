@@ -18,6 +18,16 @@ On Openshift
 
 `OpenShift <https://www.openshift.com/>`_ is Red Hat's Platform-as-a-Service (PaaS) that allows developers to quickly develop, host, and scale applications in a cloud environment. With their Python, PostgreSQL and Elasticsearch cartridges there's all you need to host a Wagtail site. To get quickly up and running you may use the `wagtail-openshift-quickstart <https://github.com/texperience/wagtail-openshift-quickstart>`_.
 
+On Divio Cloud
+~~~~~~~~~~~~~~
+
+The `Divio Cloud <https://divio.com>`_ provides dedicated Django hosting. It's an application-centric platform, and
+includes Wagtail amongst its base project types, so you can have a live Wagtil project running in minutes. Projects on
+Divio Cloud run in Docker containers, which can be also be built locally to provide you with a development environment
+that's identical to the deployment environment. See `Get started with Wagtail
+<http://support.divio.com/project-types/wagtail/get-started-with-wagtail-on-divio-cloud>`_ in the Divio Cloud
+documentation, and `Deploy your Wagtail site on Divio <add-link-to-Wagtail-weblog>`_ in the Wagtail weblog.
+
 On other PAASs and IAASs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
