@@ -29,7 +29,7 @@ This will install PyOpenCV into your site packages. If you are using a virtual e
 Enabling site packages in the virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are not using a virtual envionment, you can skip this step.
+If you are not using a virtual environment, you can skip this step.
 
 Enabling site packages is different depending on whether you are using pyvenv (Python 3.3+ only) or virtualenv to manage your virtual environment.
 
@@ -79,34 +79,9 @@ You can manually run feature detection on all images by running the following co
 
  .. code-block:: python
 
-    from wagtail.wagtailimages.models import Image
+    from wagtail.images.models import Image
 
     for image in Image.objects.all():
         if not image.has_focal_point():
             image.set_focal_point(image.get_suggested_focal_point())
             image.save()
-
-.. _feature_detection_custom_image_model:
-
-Feature detection and custom image models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When using a :ref:`custom_image_model`, you need to add a signal handler to
-the model to trigger feature detection whenever a new image is uploaded:
-
-.. code-block:: python
-
-    # Do feature detection when a user saves an image without a focal point
-    @receiver(pre_save, sender=CustomImage)
-    def image_feature_detection(sender, instance, **kwargs):
-        # Make sure the image doesn't already have a focal point
-        if not instance.has_focal_point():
-            # Set the focal point
-            instance.set_focal_point(instance.get_suggested_focal_point())
-
-.. note::
-
-    This example will always run feature detection regardless of whether the
-    ``WAGTAILIMAGES_FEATURE_DETECTION_ENABLED`` setting is set.
-
-    Add a check for this setting if you still want it to have effect.

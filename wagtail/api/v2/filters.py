@@ -1,12 +1,12 @@
-from __future__ import absolute_import, unicode_literals
-
 from django.conf import settings
 from django.db import models
 from rest_framework.filters import BaseFilterBackend
 from taggit.managers import TaggableManager
 
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtailsearch.backends import get_search_backend
+from wagtail.core import hooks
+from wagtail.core.models import Page
+from wagtail.search.backends import get_search_backend
+from wagtail.search.backends.base import FilterFieldError, OrderByFieldError
 
 from .utils import BadRequestError, pages_for_site, parse_boolean
 
@@ -118,7 +118,12 @@ class SearchFilter(BaseFilterBackend):
             order_by_relevance = 'order' not in request.GET
 
             sb = get_search_backend()
-            queryset = sb.search(search_query, queryset, operator=search_operator, order_by_relevance=order_by_relevance)
+            try:
+                queryset = sb.search(search_query, queryset, operator=search_operator, order_by_relevance=order_by_relevance)
+            except FilterFieldError as e:
+                raise BadRequestError("cannot filter by '{}' while searching (field is not indexed)".format(e.field_name))
+            except OrderByFieldError as e:
+                raise BadRequestError("cannot order by '{}' while searching (field is not indexed)".format(e.field_name))
 
         return queryset
 
@@ -138,10 +143,11 @@ class ChildOfFilter(BaseFilterBackend):
         if 'child_of' in request.GET:
             try:
                 parent_page_id = int(request.GET['child_of'])
-                assert parent_page_id >= 0
+                if parent_page_id < 0:
+                    raise ValueError()
 
                 parent_page = self.get_page_by_id(request, parent_page_id)
-            except (ValueError, AssertionError):
+            except ValueError:
                 if request.GET['child_of'] == 'root':
                     parent_page = self.get_root_page(request)
                 else:
@@ -150,7 +156,7 @@ class ChildOfFilter(BaseFilterBackend):
                 raise BadRequestError("parent page doesn't exist")
 
             queryset = queryset.child_of(parent_page)
-            queryset._filtered_by_child_of = True
+            queryset._filtered_by_child_of = parent_page
 
         return queryset
 
@@ -181,14 +187,15 @@ class DescendantOfFilter(BaseFilterBackend):
 
     def filter_queryset(self, request, queryset, view):
         if 'descendant_of' in request.GET:
-            if getattr(queryset, '_filtered_by_child_of', False):
+            if hasattr(queryset, '_filtered_by_child_of'):
                 raise BadRequestError("filtering by descendant_of with child_of is not supported")
             try:
                 parent_page_id = int(request.GET['descendant_of'])
-                assert parent_page_id >= 0
+                if parent_page_id < 0:
+                    raise ValueError()
 
                 parent_page = self.get_page_by_id(request, parent_page_id)
-            except (ValueError, AssertionError):
+            except ValueError:
                 if request.GET['descendant_of'] == 'root':
                     parent_page = self.get_root_page(request)
                 else:
@@ -212,3 +219,16 @@ class RestrictedDescendantOfFilter(DescendantOfFilter):
     def get_page_by_id(self, request, page_id):
         site_pages = pages_for_site(request.site)
         return site_pages.get(id=page_id)
+
+
+class ForExplorerFilter(BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        if request.GET.get('for_explorer'):
+            if not hasattr(queryset, '_filtered_by_child_of'):
+                raise BadRequestError("filtering by for_explorer without child_of is not supported")
+
+            parent_page = queryset._filtered_by_child_of
+            for hook in hooks.get_hooks('construct_explorer_page_queryset'):
+                queryset = hook(parent_page, queryset, request)
+
+        return queryset

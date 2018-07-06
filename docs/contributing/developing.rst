@@ -5,7 +5,7 @@ Development
 
 Setting up a local copy of `the Wagtail git repository <https://github.com/wagtail/wagtail>`_ is slightly more involved than running a release package of Wagtail, as it requires `Node.js <https://nodejs.org/>`_ and NPM for building Javascript and CSS assets. (This is not required when running a release version, as the compiled assets are included in the release package.)
 
-If you're happy to develop on a virtual machine, the `vagrant-wagtail-develop <https://github.com/wagtail/vagrant-wagtail-develop>`_ setup script is the fastest way to get up and running. This will provide you with a running instance of the `Wagtail demo site <https://github.com/wagtail/wagtaildemo/>`_, with the Wagtail and wagtaildemo codebases available as shared folders for editing on your host machine.
+If you're happy to develop on a virtual machine, the `vagrant-wagtail-develop <https://github.com/wagtail/vagrant-wagtail-develop>`_ setup script is the fastest way to get up and running. This will provide you with a running instance of the `Wagtail Bakery demo site <https://github.com/wagtail/bakerydemo/>`_, with the Wagtail and bakerydemo codebases available as shared folders for editing on your host machine.
 
 (Build scripts for other platforms would be very much welcomed - if you create one, please let us know via the `Wagtail Developers group <https://groups.google.com/forum/#!forum/wagtail-developers>`_!)
 
@@ -15,7 +15,10 @@ If you'd prefer to set up all the components manually, read on. These instructio
 Setting up the Wagtail codebase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install Node.js, version 4.x, 5.x or 6.x. Instructions for installing Node.js can be found on the `Node.js download page <https://nodejs.org/download/>`_. You will also need to install the **libjpeg** and **zlib** libraries, if you haven't done so already - see Pillow's `platform-specific installation instructions <http://pillow.readthedocs.org/en/latest/installation.html#external-libraries>`_.
+Install Node.js, version 8. Instructions for installing Node.js can be found on the `Node.js download page <https://nodejs.org/download/>`_.
+You can also use Node version manager (nvm) since Wagtail supplies a ``.nvmrc`` file in the root of the project with the minimum required Node version - see nvm's `installation instructions <https://github.com/creationix/nvm>`_.
+
+You will also need to install the **libjpeg** and **zlib** libraries, if you haven't done so already - see Pillow's `platform-specific installation instructions <http://pillow.readthedocs.org/en/latest/installation.html#external-libraries>`_.
 
 Clone a copy of `the Wagtail codebase <https://github.com/wagtail/wagtail>`_:
 
@@ -28,7 +31,13 @@ With your preferred virtualenv activated, install the Wagtail package in develop
 
 .. code-block:: console
 
-    $ pip install -e .[testing,docs] -U
+    $ pip install -e '.[testing,docs]' -U
+
+Install Node through nvm (optional):
+
+.. code-block:: console
+
+    $ nvm install
 
 Install the tool chain for building static assets:
 
@@ -42,7 +51,7 @@ Compile the assets:
 
     $ npm run build
 
-Any Wagtail sites you start up in this virtualenv will now run against this development instance of Wagtail. We recommend using the `Wagtail demo site <https://github.com/wagtail/wagtaildemo/>`_ as a basis for developing Wagtail.
+Any Wagtail sites you start up in this virtualenv will now run against this development instance of Wagtail.  We recommend using the `Wagtail Bakery demo site <https://github.com/wagtail/bakerydemo/>`_ as a basis for developing Wagtail. Keep in mind that the setup steps for a Wagtail site may include installing a release version of Wagtail, which will override the development version you've just set up. In this case, you should install the site before running the ``pip install -e`` step, or re-run that step after the site is installed.
 
 .. _testing:
 
@@ -57,13 +66,29 @@ From the root of the Wagtail codebase, run the following command to run all the 
 
 **Running only some of the tests**
 
-At the time of writing, Wagtail has well over 1000 tests, which takes a while to
+At the time of writing, Wagtail has well over 2500 tests, which takes a while to
 run. You can run tests for only one part of Wagtail by passing in the path as
 an argument to ``runtests.py``:
 
 .. code-block:: console
 
-    $ python runtests.py wagtail.wagtailcore
+    $ python runtests.py wagtail.core
+
+You can also run tests for individual TestCases by passing in the path as
+an argument to ``runtests.py``
+
+.. code-block:: console
+
+    $ python runtests.py wagtail.core.tests.test_blocks.TestIntegerBlock
+
+**Running migrations for the test app models**
+
+You can create migrations for the test app by running the following from the Wagtail root.
+
+.. code-block:: console
+
+    $ django-admin.py makemigrations --settings=wagtail.tests.settings
+
 
 **Testing against PostgreSQL**
 
@@ -108,6 +133,41 @@ If your Elasticsearch instance is located somewhere else, you can set the
 
     $ ELASTICSEARCH_URL=http://my-elasticsearch-instance:9200 python runtests.py --elasticsearch
 
+**Browser and device support**
+
+Wagtail is meant to be used on a wide variety of devices and browsers. Supported browser / device versions include:
+
+=============  =============  =============
+Browser        Device/OS      Version(s)
+=============  =============  =============
+Mobile Safari  iOS Phone      Last 2
+Mobile Safari  iOS Tablet     Last 2
+Chrome         Android        Last 2
+IE             Desktop        11
+Chrome         Desktop        Last 2
+MS Edge        Desktop        Last 2
+Firefox        Desktop        Latest
+Firefox ESR    Desktop        Latest
+Safari         macOS          Last 2
+=============  =============  =============
+
+We aim for Wagtail to work in those environments. Our development standards ensure that the site is usable on other browsers **and will work on future browsers**. To test on IE, install virtual machines `made available by Microsoft <https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/>`_.
+
+IE 11 is gradually falling out of use, and specific features are unsupported in this browser:
+
+* Rich text copy-paste in the rich text editor.
+* Sticky toolbar in the rich text editor.
+
+Unsupported browsers / devices include:
+
+=============  =============  =============
+Browser        Device/OS      Version(s)
+=============  =============  =============
+Stock browser  Android        All
+IE             Desktop        10 and below
+Safari         Windows        All
+=============  =============  =============
+
 Compiling static assets
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -132,7 +192,7 @@ The Wagtail documentation is built by Sphinx. To install Sphinx and compile the 
 
 .. code-block:: console
 
-    $ cd /path/to/wagtail some text
+    $ cd /path/to/wagtail
     $ # Install the documentation dependencies
     $ pip install -e .[docs]
     $ # Compile the docs
@@ -147,10 +207,7 @@ To start this simple server, run the following commands:
 .. code-block:: console
 
     $ cd docs/_build/html/
-    $ # Python 2
-    $ python2 -mSimpleHTTPServer 8080
-    $ # Python 3
-    $ python3 -mhttp.server 8080
+    $ python -mhttp.server 8080
 
 Now you can open <http://localhost:8080/> in your web browser to see the compiled documentation.
 
@@ -163,3 +220,13 @@ To clear the built HTML and start fresh, so you can see all warnings thrown when
     $ cd docs/
     $ make clean
     $ make html
+
+Wagtail also provides a way for documentation to be compiled automatically on each change.
+To do this, you can run the following command to see the changes automatically at ``localhost:4000``:
+
+.. code-block:: console
+
+    $ cd docs/
+    $ make livehtml
+
+

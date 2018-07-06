@@ -8,8 +8,8 @@ information about an instance without the option to edit it, you can easily
 enable the inspect view by setting ``inspect_view_enabled=True`` on your
 ``ModelAdmin`` class.
 
-When enabled, an 'Inspect' button will automatically appear for each row in
-your index / listing view, linking to new page that shows values a list of
+When ``InspectView`` is enabled, an 'Inspect' button will automatically appear for each row in
+your index / listing view, linking to a new page that shows a list of
 field values for that particular object.
 
 By default, all 'concrete' fields (where the field value is stored as a column
@@ -28,16 +28,19 @@ class:
 ------------------------------------------
 
 **Expected value:** A list or tuple, where each item is the name of a field
-that you'd like ``InpectView`` to render.
+or attribute on the instance that you'd like ``InpectView`` to render.
 
 A sensible value will be rendered for most field types.
 
-If a field happens to be a ``ForeignKey`` linking to the
-``wagtailimages.Image`` model, a thumbnail of that image will be rendered.
+If you have ``wagtail.images`` installed, and the value happens to be an
+instance of ``wagtailimages.models.Image`` (or a custom model that subclasses
+``wagtailimages.models.AbstractImage``), a thumbnail of that image will be
+rendered.
 
-If a field happens to be a ``ForeignKey`` linking to the
-``wagtaildocs.Document`` model, a link to that document will be rendered.
-
+If you have `wagtail.documents` installed, and the value happens to be an
+instance of `wagtaildocs.models.Document` (or a custom model that subclasses
+``wagtaildocs.models.AbstractDocument``), a link to that document will be
+rendered, along with the document title, file extension and size.
 
 .. _modeladmin_inspect_view_fields_exclude:
 

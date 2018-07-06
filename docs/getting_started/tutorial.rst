@@ -67,13 +67,11 @@ Edit ``home/models.py`` as follows, to add a ``body`` field to the model:
 
 .. code-block:: python
 
-    from __future__ import unicode_literals
-
     from django.db import models
 
-    from wagtail.wagtailcore.models import Page
-    from wagtail.wagtailcore.fields import RichTextField
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel
+    from wagtail.core.models import Page
+    from wagtail.core.fields import RichTextField
+    from wagtail.admin.edit_handlers import FieldPanel
 
 
     class HomePage(Page):
@@ -84,7 +82,7 @@ Edit ``home/models.py`` as follows, to add a ``body`` field to the model:
         ]
 
 ``body`` is defined as ``RichTextField``, a special Wagtail field. You
-can use any of the `Django core fields <https://docs.djangoproject.com/en/1.8/ref/models/fields/>`__. ``content_panels`` define the
+can use any of the `Django core fields <https://docs.djangoproject.com/en/stable/ref/models/fields/>`__. ``content_panels`` define the
 capabilities and the layout of the editing interface. :doc:`More on creating Page models. <../topics/pages>`
 
 Run ``python manage.py makemigrations``, then
@@ -92,14 +90,16 @@ Run ``python manage.py makemigrations``, then
 changes. You must run the above commands each time you make changes to
 the model definition.
 
-You can now edit the homepage within the Wagtail admin area (go to Explorer, Homepage, then Edit) to see the new body field. Enter some text into the body field, and publish the page.
+You can now edit the homepage within the Wagtail admin area (go to Pages, Homepage, then Edit) to see the new body field. Enter some text into the body field, and publish the page.
 
 The page template now needs to be updated to reflect the changes made
 to the model. Wagtail uses normal Django templates to render each page
-type. It automatically generates a template filename from the model name
-by separating capital letters with underscores (e.g. HomePage becomes
-home\_page.html). Edit
-``home/templates/home/home_page.html`` to contain the following:
+type. By default, it will look for a template filename formed from the app and model name,
+separating capital letters with underscores (e.g. HomePage within the 'home' app becomes
+``home/home_page.html``). This template file can exist in any location recognised by
+`Django's template rules <https://docs.djangoproject.com/en/stable/intro/tutorial03/#write-views-that-actually-do-something>`__; conventionally it is placed under a ``templates`` folder within the app.
+
+Edit ``home/templates/home/home_page.html`` to contain the following:
 
 .. code-block:: html+django
 
@@ -162,9 +162,10 @@ Lets start with a simple index page for our blog. In ``blog/models.py``:
 
 .. code-block:: python
 
-    from wagtail.wagtailcore.models import Page
-    from wagtail.wagtailcore.fields import RichTextField
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel
+    from wagtail.core.models import Page
+    from wagtail.core.fields import RichTextField
+    from wagtail.admin.edit_handlers import FieldPanel
+
 
     class BlogIndexPage(Page):
         intro = RichTextField(blank=True)
@@ -176,7 +177,8 @@ Lets start with a simple index page for our blog. In ``blog/models.py``:
 Run ``python manage.py makemigrations`` and ``python manage.py migrate``.
 
 Since the model is called ``BlogIndexPage``, the default template name
-(unless we override it) will be ``blog/templates/blog/blog_index_page.html:``
+(unless we override it) will be ``blog/templates/blog/blog_index_page.html``. Create this file
+with the following content:
 
 .. code-block:: html+django
 
@@ -203,7 +205,7 @@ Most of this should be familiar, but we'll explain ``get_children`` a bit later.
 Note the ``pageurl`` tag, which is similar to Django's ``url`` tag but
 takes a Wagtail Page object as an argument.
 
-In the Wagtail admin, create a ``BlogIndexPage`` under the Homepage,
+In the Wagtail admin, create a ``BlogIndexPage`` as a child of the Homepage,
 make sure it has the slug "blog" on the Promote tab, and publish it.
 You should now be able to access the url ``/blog`` on your site
 (note how the slug from the Promote tab defines the page URL).
@@ -214,10 +216,10 @@ Now we need a model and template for our blog posts. In ``blog/models.py``:
 
     from django.db import models
 
-    from wagtail.wagtailcore.models import Page
-    from wagtail.wagtailcore.fields import RichTextField
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel
-    from wagtail.wagtailsearch import index
+    from wagtail.core.models import Page
+    from wagtail.core.fields import RichTextField
+    from wagtail.admin.edit_handlers import FieldPanel
+    from wagtail.search import index
 
 
     # Keep the definition of BlogIndexPage, and add:
@@ -266,7 +268,7 @@ Create a template at ``blog/templates/blog/blog_page.html``:
 Note the use of Wagtail's built-in ``get_parent()`` method to obtain the
 URL of the blog this post is a part of.
 
-Now create a few blog posts as children of ``BlogIndexPage.``
+Now create a few blog posts as children of ``BlogIndexPage``.
 Be sure to select type "Blog Page" when creating your posts.
 
 .. figure:: ../_static/images/tutorial/tutorial_4a.png
@@ -299,7 +301,7 @@ Much of the work you'll be doing in Wagtail revolves around the concept of hiera
 In this case, the ``BlogIndexPage`` is a "node" and individual ``BlogPage`` instances
 are the "leaves".
 
-Take another look at the guts of ``BlogIndexPage:``
+Take another look at the guts of ``blog_index_page.html``:
 
 .. code-block:: html+django
 
@@ -374,12 +376,12 @@ model like this:
 
         def get_context(self, request):
             # Update context to include only published posts, ordered by reverse-chron
-            context = super(BlogIndexPage, self).get_context(request)
+            context = super().get_context(request)
             blogpages = self.get_children().live().order_by('-first_published_at')
             context['blogpages'] = blogpages
             return context
 
-All we've done here is retrieve the original context, create a custom queryset,
+All we've done here is retrieve the original context, create a custom QuerySet,
 add it to the retrieved context, and return the modified context back to the view.
 You'll also need to modify your ``blog_index_page.html`` template slightly.
 Change:
@@ -387,7 +389,7 @@ Change:
 ``{% for post in page.get_children %}`` to ``{% for post in blogpages %}``
 
 Now try unpublishing one of your posts - it should disappear from the blog index
-page. The remaining posts should now be sorted with the most recently modified
+page. The remaining posts should now be sorted with the most recently published
 posts first.
 
 Images
@@ -405,11 +407,11 @@ Add a new ``BlogPageGalleryImage`` model to ``models.py``:
 
     from modelcluster.fields import ParentalKey
 
-    from wagtail.wagtailcore.models import Page, Orderable
-    from wagtail.wagtailcore.fields import RichTextField
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel, InlinePanel
-    from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
-    from wagtail.wagtailsearch import index
+    from wagtail.core.models import Page, Orderable
+    from wagtail.core.fields import RichTextField
+    from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
+    from wagtail.images.edit_handlers import ImageChooserPanel
+    from wagtail.search import index
 
 
     # ... (Keep the definition of BlogIndexPage, and update BlogPage:)
@@ -434,7 +436,7 @@ Add a new ``BlogPageGalleryImage`` model to ``models.py``:
 
 
     class BlogPageGalleryImage(Orderable):
-        page = ParentalKey(BlogPage, related_name='gallery_images')
+        page = ParentalKey(BlogPage, on_delete=models.CASCADE, related_name='gallery_images')
         image = models.ForeignKey(
             'wagtailimages.Image', on_delete=models.CASCADE, related_name='+'
         )
@@ -565,21 +567,25 @@ First, alter ``models.py`` once more:
     # New imports added for ClusterTaggableManager, TaggedItemBase, MultiFieldPanel
 
     from modelcluster.fields import ParentalKey
-    from modelcluster.tags import ClusterTaggableManager
+    from modelcluster.contrib.taggit import ClusterTaggableManager
     from taggit.models import TaggedItemBase
 
-    from wagtail.wagtailcore.models import Page, Orderable
-    from wagtail.wagtailcore.fields import RichTextField
-    from wagtail.wagtailadmin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
-    from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
-    from wagtail.wagtailsearch import index
+    from wagtail.core.models import Page, Orderable
+    from wagtail.core.fields import RichTextField
+    from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
+    from wagtail.images.edit_handlers import ImageChooserPanel
+    from wagtail.search import index
 
 
     # ... (Keep the definition of BlogIndexPage)
 
 
     class BlogPageTag(TaggedItemBase):
-        content_object = ParentalKey('BlogPage', related_name='tagged_items')
+        content_object = ParentalKey(
+            'BlogPage',
+            related_name='tagged_items',
+            on_delete=models.CASCADE
+        )
 
 
     class BlogPage(Page):
@@ -647,7 +653,7 @@ will get you a 404, since we haven't yet defined a "tags" view. Add to ``models.
             blogpages = BlogPage.objects.filter(tags__name=tag)
 
             # Update template context
-            context = super(BlogTagIndexPage, self).get_context(request)
+            context = super().get_context(request)
             context['blogpages'] = blogpages
             return context
 
@@ -655,10 +661,10 @@ Note that this Page-based model defines no fields of its own.
 Even without fields, subclassing ``Page`` makes it a part of the
 Wagtail ecosystem, so that you can give it a title and URL in the
 admin, and so that you can manipulate its contents by returning
-a queryset from its ``get_context()`` method.
+a QuerySet from its ``get_context()`` method.
 
 Migrate this in, then create a new ``BlogTagIndexPage`` in the admin.
-You'll probably want to create the new page/view under Homepage,
+You'll probably want to create the new page/view as a child of Homepage,
 parallel to your Blog index. Give it the slug "tags" on the Promote tab.
 
 Access ``/tags`` and Django will tell you what you probably already knew:
@@ -702,6 +708,110 @@ something like this:
 
 .. figure:: ../_static/images/tutorial/tutorial_9.png
    :alt: A simple tag view
+
+
+.. _tutorial_categories:
+
+Categories
+~~~~~~~~~~
+
+Let's add a category system to our blog. Unlike tags, where a page author can bring a tag into existence simply by using it on a page, our categories will be a fixed list, managed by the site owner through a separate area of the admin interface.
+
+First, we define a ``BlogCategory`` model. A category is not a page in its own right, and so we define it as a standard Django ``models.Model`` rather than inheriting from ``Page``. Wagtail introduces the concept of "snippets" for reusable pieces of content that need to be managed through the admin interface, but do not exist as part of the page tree themselves; a model can be registered as a snippet by adding the ``@register_snippet`` decorator. All the field types we've used so far on pages can be used on snippets too - here we'll give each category an icon image as well as a name. Add to ``blog/models.py``:
+
+
+.. code-block:: python
+
+    from wagtail.snippets.models import register_snippet
+
+
+    @register_snippet
+    class BlogCategory(models.Model):
+        name = models.CharField(max_length=255)
+        icon = models.ForeignKey(
+            'wagtailimages.Image', null=True, blank=True,
+            on_delete=models.SET_NULL, related_name='+'
+        )
+
+        panels = [
+            FieldPanel('name'),
+            ImageChooserPanel('icon'),
+        ]
+
+        def __str__(self):
+            return self.name
+
+        class Meta:
+            verbose_name_plural = 'blog categories'
+
+
+.. note::
+   Note that we are using ``panels`` rather than ``content_panels`` here - since snippets generally have no need for fields such as slug or publish date, the editing interface for them is not split into separate 'content' / 'promote' / 'settings' tabs as standard, and so there is no need to distinguish between 'content panels' and 'promote panels'.
+
+Migrate this change in, and create a few categories through the Snippets area which now appears in the admin menu.
+
+We can now add categories to the ``BlogPage`` model, as a many-to-many field. The field type we use for this is ``ParentalManyToManyField`` - this is a variant of the standard Django ``ManyToManyField`` which ensures that the chosen objects are correctly stored against the page record in the revision history, in much the same way that ``ParentalKey`` replaces ``ForeignKey`` for one-to-many relations.
+
+
+.. code-block:: python
+
+    # New imports added for forms and ParentalManyToManyField
+    from django import forms
+    from django.db import models
+
+    from modelcluster.fields import ParentalKey, ParentalManyToManyField
+    from modelcluster.contrib.taggit import ClusterTaggableManager
+    from taggit.models import TaggedItemBase
+
+    # ...
+
+    class BlogPage(Page):
+        date = models.DateField("Post date")
+        intro = models.CharField(max_length=250)
+        body = RichTextField(blank=True)
+        tags = ClusterTaggableManager(through=BlogPageTag, blank=True)
+        categories = ParentalManyToManyField('blog.BlogCategory', blank=True)
+
+        # ... (Keep the main_image method and search_fields definition)
+
+        content_panels = Page.content_panels + [
+            MultiFieldPanel([
+                FieldPanel('date'),
+                FieldPanel('tags'),
+                FieldPanel('categories', widget=forms.CheckboxSelectMultiple),
+            ], heading="Blog information"),
+            FieldPanel('intro'),
+            FieldPanel('body'),
+            InlinePanel('gallery_images', label="Gallery images"),
+        ]
+
+
+Here we're making use of the ``widget`` keyword argument on the ``FieldPanel`` definition to specify a checkbox-based widget instead of the default multiple select box, as this is often considered more user-friendly.
+
+Finally, we can update the ``blog_page.html`` template to display the categories:
+
+.. code-block:: html+django
+
+    <h1>{{ page.title }}</h1>
+    <p class="meta">{{ page.date }}</p>
+
+    {% with categories=page.categories.all %}
+        {% if categories %}
+            <h3>Posted in:</h3>
+            <ul>
+                {% for category in categories %}
+                    <li style="display: inline">
+                        {% image category.icon fill-32x32 style="vertical-align: middle" %}
+                        {{ category.name }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+
+.. figure:: ../_static/images/tutorial/tutorial_10.jpg
+   :alt: A blog post with categories
 
 
 Where next

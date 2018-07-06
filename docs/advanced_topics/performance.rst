@@ -33,40 +33,19 @@ Search
 
 Wagtail has strong support for `Elasticsearch <http://www.elasticsearch.org/>`_ - both in the editor interface and for users of your site - but can fall back to a database search if Elasticsearch isn't present. Elasticsearch is faster and more powerful than the Django ORM for text search, so we recommend installing it or using a hosted service like `Searchly <http://www.searchly.com/>`_.
 
-Once the Elasticsearch server is installed and running. Install the ``elasticsearch`` Python module with:
-
-.. code-block:: console
-
-    $ pip install elasticsearch
-
-then add the following to your settings:
-
-.. code-block:: python
-
-    WAGTAILSEARCH_BACKENDS = {
-        'default': {
-            'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch',
-            'INDEX': '{{ project_name }}',
-        },
-    }
-
-Once Elasticsearch is configured, you can index any existing content you may have:
-
-.. code-block:: console
-
-    $ ./manage.py update_index
+For details on configuring Wagtail for Elasticsearch, see :ref:`wagtailsearch_backends_elasticsearch`.
 
 
 Database
 --------
 
-Wagtail is tested on SQLite, and should work on other Django-supported database backends, but we recommend PostgreSQL for production use.
+Wagtail is tested on PostgreSQL, SQLite and MySQL. It should work on some third-party database backends as well (Microsoft SQL Server is known to work but currently untested). We recommend PostgreSQL for production use.
 
 
 Templates
 ---------
 
-The overhead from reading and compiling templates can add up. In some cases a significant performance improvement can be gained by using `Django's cached template loader <https://docs.djangoproject.com/en/1.10/ref/templates/api/#django.template.loaders.cached.Loader>`_:
+The overhead from reading and compiling templates can add up. In some cases a significant performance improvement can be gained by using `Django's cached template loader <https://docs.djangoproject.com/en/stable/ref/templates/api/#django.template.loaders.cached.Loader>`_:
 
 .. code-block:: python
 
